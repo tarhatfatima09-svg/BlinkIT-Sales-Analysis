@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BlinkIT Grocery Sales Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --green-900:#0A5C17;
+    --green-700:#0C831F;
+    --green-500:#2FA83E;
+    --green-100:#E4F5E6;
+    --yellow-500:#F8CB46;
+    --yellow-300:#FBE6A8;
+    --ink:#16241A;
+    --muted:#5B6B60;
+    --line:#E4E9E1;
+    --bg:#F6F8F4;
+    --card:#FFFFFF;
+    --radius:16px;
+    --shadow: 0 1px 2px rgba(16,40,20,0.04), 0 8px 24px -12px rgba(16,40,20,0.10);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    background-image:
+      radial-gradient(circle at 100% 0%, rgba(248,203,70,0.10), transparent 45%),
+      radial-gradient(circle at 0% 100%, rgba(12,131,31,0.06), transparent 40%);
+    font-family:'Segoe UI', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    color:var(--ink);
+    padding:28px 32px 60px;
+  }
+  .wrap{max-width:1320px;margin:0 auto;}
+
+  /* Header */
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:16px;
+    margin-bottom:26px;
+    padding-bottom:20px;
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{
+    width:42px;height:42px;border-radius:12px;
+    background:linear-gradient(135deg,var(--green-700),var(--green-500));
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:var(--shadow);
+    flex-shrink:0;
+  }
+  .brand-mark svg{width:22px;height:22px;}
+  h1{
+    font-size:26px;
+    font-weight:800;
+    margin:0;
+    letter-spacing:-0.02em;
+  }
+  .subtitle{
+    color:var(--muted);
+    font-size:13.5px;
+    margin-top:3px;
+  }
+  .meta-pill{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:8px 16px;
+    font-size:12.5px;
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    box-shadow:var(--shadow);
+  }
+  .meta-pill b{color:var(--green-700);font-weight:700;}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--yellow-500);}
+
+  /* KPI row */
+  .kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+    margin-bottom:22px;
+  }
+  .kpi{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:20px 22px;
+    box-shadow:var(--shadow);
+    position:relative;
+    overflow:hidden;
+    transition:transform .15s ease;
+  }
+  .kpi:hover{transform:translateY(-2px);}
+  .kpi::before{
+    content:"";
+    position:absolute;
+    top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,var(--green-700),var(--yellow-500));
+  }
+  .kpi-label{
+    font-size:12px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    gap:7px;
+    margin-bottom:10px;
+  }
+  .kpi-icon{
+    width:26px;height:26px;border-radius:8px;
+    background:var(--green-100);
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .kpi-icon svg{width:14px;height:14px;stroke:var(--green-700);}
+  .kpi-value{
+    font-size:30px;
+    font-weight:800;
+    letter-spacing:-0.02em;
+    font-variant-numeric:tabular-nums;
+    color:var(--ink);
+  }
+  .kpi-value span{font-size:16px;font-weight:700;color:var(--muted);}
+  .kpi-sub{font-size:12px;color:var(--muted);margin-top:6px;}
+  .kpi-sub.up{color:var(--green-700);font-weight:600;}
+
+  /* Panels */
+  .panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:20px 22px 14px;
+  }
+  .panel-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:12px;
+  }
+  .panel-title{font-size:14.5px;font-weight:700;color:var(--ink);}
+  .panel-note{font-size:11.5px;color:var(--muted);}
+  .chart-box{position:relative;width:100%;}
+
+  .row-main{margin-bottom:18px;}
+  .row-main .chart-box{height:300px;}
+
+  .grid-4{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+  }
+  .grid-4 .chart-box{height:230px;}
+
+  footer{
+    text-align:center;
+    color:var(--muted);
+    font-size:11.5px;
+    margin-top:28px;
+  }
+
+  @media (max-width:1100px){
+    .kpi-grid{grid-template-columns:repeat(2,1fr);}
+    .grid-4{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width:640px){
+    body{padding:18px;}
+    .kpi-grid{grid-template-columns:1fr;}
+    .grid-4{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 8L6 20H18L20 8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 8V6C8 3.79086 9.79086 2 12 2C14.2091 2 16 3.79086 16 6V8" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <path d="M4 8H20" stroke="#F8CB46" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1>BlinkIT Grocery Sales Dashboard</h1>
+        <div class="subtitle">Item-level sales, ratings & distribution overview</div>
+      </div>
+    </div>
+    <div class="meta-pill"><span class="dot"></span> <b id="rowCount">8,523</b> items analyzed</div>
+  </header>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label"><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Total Sales</div>
+      <div class="kpi-value" id="kpiTotal">–</div>
+      <div class="kpi-sub">Sum across all transactions</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label"><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.1-2.8-2.8L7 14"/></svg></span>Average Sales</div>
+      <div class="kpi-value" id="kpiAvg">–</div>
+      <div class="kpi-sub">Per item, across 8,523 rows</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label"><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></span>Maximum Sales</div>
+      <div class="kpi-value" id="kpiMax">–</div>
+      <div class="kpi-sub">Highest single sale value</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label"><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9 12 2"/></svg></span>Average Rating</div>
+      <div class="kpi-value" id="kpiRating">–<span>/5</span></div>
+      <div class="kpi-sub up">Based on all item ratings</div>
+    </div>
+  </div>
+
+  <!-- MAIN CHART -->
+  <div class="row-main panel">
+    <div class="panel-head">
+      <div class="panel-title">Top 10 Items by Sales</div>
+      <div class="panel-note">Item Identifier · Sum of Sales</div>
+    </div>
+    <div class="chart-box"><canvas id="chartTop10"></canvas></div>
+  </div>
+
+  <!-- DISTRIBUTIONS -->
+  <div class="grid-4">
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Rating Distribution</div></div>
+      <div class="chart-box"><canvas id="chartRating"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Item Weight Distribution</div></div>
+      <div class="chart-box"><canvas id="chartWeight"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Item Visibility Distribution</div></div>
+      <div class="chart-box"><canvas id="chartVisibility"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Sales Distribution</div></div>
+      <div class="chart-box"><canvas id="chartSalesDist"></canvas></div>
+    </div>
+  </div>
+
+  <footer>BlinkIT Cleaned Data · 8,523 records · Item Weight distribution excludes 1,463 missing values</footer>
+</div>
+
+<script>
+// ---- Precomputed data from BlinkIT_Cleaned_Data.csv ----
+const KPI = { total: 1201681.49, avg: 140.99, max: 266.89, rating: 3.97 };
+
+const TOP10 = {
+  labels: ["FDU12","FDT07","NCQ06","FDL58","NCB31","FDX31","FDF05","FDR59","FDP28","FDA04"],
+  values: [2371.01,2306.90,2294.71,2111.65,2104.73,2104.46,2103.13,2096.58,2087.85,2072.07]
+};
+
+const RATING = {
+  labels: ["1.0–1.5","1.5–2.0","2.0–2.5","2.5–3.0","3.0–3.5","3.5–4.0","4.0–4.5","4.5–5.0"],
+  values: [118,26,124,156,501,1087,5570,941]
+};
+
+const WEIGHT = {
+  labels: ["4–6","6–8","8–10","10–12","12–14","14–16","16–18","18–20","20–22"],
+  values: [373,1025,979,812,873,813,905,789,491]
+};
+
+const VISIBILITY = {
+  labels: ["0.00–0.04","0.04–0.08","0.08–0.12","0.12–0.16","0.16–0.20","0.20–0.24","0.24–0.28","0.28–0.34"],
+  values: [3274,2507,1401,840,367,67,35,32]
+};
+
+const SALESDIST = {
+  labels: ["25–50","50–75","75–100","100–125","125–150","150–175","175–200","200–225","225–250","250–275"],
+  values: [757,638,1044,1332,878,1169,1265,417,579,444]
+};
+
+// ---- Formatting helpers ----
+function fmtMoney(n){
+  if(n>=100000) return "₹" + (n/100000).toFixed(2) + "L";
+  if(n>=1000) return "₹" + (n/1000).toFixed(1) + "K";
+  return "₹" + n.toFixed(0);
+}
+function fmtCount(n){
+  if(n>=1000) return (n/1000).toFixed(1) + "K";
+  return n.toString();
+}
+
+document.getElementById('kpiTotal').textContent = fmtMoney(KPI.total);
+document.getElementById('kpiAvg').textContent = "₹" + KPI.avg.toFixed(1);
+document.getElementById('kpiMax').textContent = "₹" + KPI.max.toFixed(1);
+document.getElementById('kpiRating').innerHTML = KPI.rating.toFixed(2) + "<span>/5</span>";
+
+// ---- Chart defaults ----
+Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+Chart.defaults.color = "#5B6B60";
+Chart.defaults.font.size = 11;
+
+const green = "#0C831F";
+const greenSoft = "rgba(12,131,31,0.85)";
+const yellow = "#F8CB46";
+const gridColor = "rgba(0,0,0,0)";
+
+function barChart(ctx, labels, values, color, opts={}){
+  return new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{
+        data: values,
+        backgroundColor: color,
+        borderRadius: 5,
+        maxBarThickness: opts.thick || 34,
+        borderSkipped:false
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:"#16241A",
+          padding:10,
+          cornerRadius:8,
+          titleFont:{weight:'bold'},
+          callbacks: opts.tooltipCallback || undefined
+        },
+        datalabels:false
+      },
+      scales:{
+        x:{
+          grid:{display:false, drawBorder:false},
+          ticks:{
+            maxRotation: opts.rotate || 0,
+            minRotation: opts.rotate || 0,
+            font:{size: opts.xFont || 10}
+          }
+        },
+        y:{
+          beginAtZero:true,
+          grid:{color:"#EEF2EC", drawBorder:false},
+          ticks:{
+            callback: opts.yFormat || function(v){return v;},
+            font:{size:10}
+          }
+        }
+      }
+    }
+  });
+}
+
+barChart(document.getElementById('chartTop10'), TOP10.labels, TOP10.values, green, {
+  thick:42, rotate:0,
+  yFormat:(v)=>fmtMoney(v),
+  tooltipCallback:{ label:(c)=> ' Sales: ' + fmtMoney(c.parsed.y) }
+});
+
+barChart(document.getElementById('chartRating'), RATING.labels, RATING.values, yellow, {
+  thick:28, rotate:0, xFont:9,
+  yFormat:(v)=>fmtCount(v),
+  tooltipCallback:{ label:(c)=> ' Items: ' + c.parsed.y.toLocaleString() }
+});
+
+barChart(document.getElementById('chartWeight'), WEIGHT.labels, WEIGHT.values, greenSoft, {
+  thick:26, rotate:0, xFont:9,
+  yFormat:(v)=>fmtCount(v),
+  tooltipCallback:{ label:(c)=> ' Items: ' + c.parsed.y.toLocaleString() }
+});
+
+barChart(document.getElementById('chartVisibility'), VISIBILITY.labels, VISIBILITY.values, yellow, {
+  thick:22, rotate:38, xFont:8.5,
+  yFormat:(v)=>fmtCount(v),
+  tooltipCallback:{ label:(c)=> ' Items: ' + c.parsed.y.toLocaleString() }
+});
+
+barChart(document.getElementById('chartSalesDist'), SALESDIST.labels, SALESDIST.values, greenSoft, {
+  thick:22, rotate:0, xFont:9,
+  yFormat:(v)=>fmtCount(v),
+  tooltipCallback:{ label:(c)=> ' Items: ' + c.parsed.y.toLocaleString() }
+});
+</script>
+</body>
+</html>
